@@ -3,84 +3,85 @@ import fs from "fs";
 import path from "path";
 import * as Generation from "@/generation/generation_pb";
 import {
-	buildGenerationRequest,
-	executeGenerationRequest,
-	onGenerationComplete,
+  buildGenerationRequest,
+  executeGenerationRequest,
+  onGenerationComplete,
 } from "@/helpers/helper";
 
 import { client, metadata } from "@/helpers/features";
 import FormData from "form-data";
 
 export async function POST(request: NextRequest) {
-	try {
-		let varResponse: string = "";
-		// const formData = new FormData()
-		const form = await request.formData();
-		// const req = await request.json();
-		const image = form.get("image") as Blob;
-		const prompt = form.get("prompt");
-		const stream: any = image.stream();
-		const chunks = [];
-		for await (const chunk of stream) {
-			chunks.push(chunk);
-		}
-		const buffer = Buffer.concat(chunks);
-		console.log("req----", buffer);
-		// formData.getBuffer()
-		const imageStrength = 0.35;
-		// const configDirectory = path.resolve(process.cwd(), "public");
-		// const generationRequest = buildGenerationRequest(
-		// 	"stable-diffusion-xl-beta-v2-2-2",
-		// 	{
-		// 		type: "image-to-image",
-		// 		prompts: [
-		// 			{
-		// 				text: prompt?.toString() ?? "",
-		// 			},
-		// 		],
-		// 		stepScheduleStart: 1 - imageStrength,
-		// 		// initImage: fs.readFileSync(path.join(configDirectory, "example_person.png")),
-		// 		initImage: buffer,
-		// 		seed: 1413160511,
-		// 		samples: 1,
-		// 		cfgScale: 8,
-		// 		steps: 30,
-		// 		sampler: Generation.DiffusionSampler.SAMPLER_K_DPMPP_2M,
-		// 	}
-		// );
+  try {
+    let varResponse: string = "";
+    const form = await request.formData();
+    const prompt = form.get("prompt");
+    const image = form.get("image") as string;
+    if (image && prompt) {
+      const reqImage = await fetch(image);
+      const result = await reqImage.blob();
+      const stream: any = result.stream();
+      const chunks = [];
+      for await (const chunk of stream) {
+        chunks.push(chunk);
+      }
+      const buffer = Buffer.concat(chunks);
+      // console.log("req----", buffer);
+      const imageStrength = 0.35;
 
-		// await executeGenerationRequest(client, generationRequest, metadata)
-		//   .then((response) => {
-		//     if (response instanceof Error) {
-		//       console.error("Generation failed", response);
-		//       throw response;
-		//     }
+      const generationRequest = buildGenerationRequest(
+        "stable-diffusion-xl-beta-v2-2-2",
+        {
+          type: "image-to-image",
+          prompts: [
+            {
+              text: prompt as string,
+            },
+          ],
+          stepScheduleStart: 1 - imageStrength,
+          initImage: buffer,
+          seed: 1413160511,
+          samples: 1,
+          cfgScale: 8,
+          steps: 30,
+          sampler: Generation.DiffusionSampler.SAMPLER_K_DPMPP_2M,
+        }
+      );
 
-		//     console.log(
-		//       `${response.imageArtifacts.length} image${
-		//         response.imageArtifacts.length > 1 ? "s" : ""
-		//       } were successfully generated.`
-		//     );
+      await executeGenerationRequest(client, generationRequest, metadata)
+        .then((response) => {
+          if (response instanceof Error) {
+            console.error("Generation failed", response);
+            throw response;
+          }
 
-		//     if (response.filteredArtifacts.length > 0) {
-		//       console.log(
-		//         `${response.filteredArtifacts.length} artifact` +
-		//           `${response.filteredArtifacts.length > 1 ? "s" : ""}` +
-		//           ` were filtered by the NSFW classifier and need to be retried.`
-		//       );
-		//     }
+          console.log(
+            `${response.imageArtifacts.length} image${
+              response.imageArtifacts.length > 1 ? "s" : ""
+            } were successfully generated.`
+          );
 
-		//     console.log("artifact.getBinary_asB64", response);
-		//     response.imageArtifacts.forEach((artifact: Generation.Artifact) => {
-		//       varResponse = `data:${artifact.getMime()};base64,${artifact.getBinary_asB64()}`;
-		//     });
-		//   })
-		//   .catch((error) => {
-		//     console.error("Failed to make image-to-image request:", error);
-		//   });
+          if (response.filteredArtifacts.length > 0) {
+            console.log(
+              `${response.filteredArtifacts.length} artifact` +
+                `${response.filteredArtifacts.length > 1 ? "s" : ""}` +
+                ` were filtered by the NSFW classifier and need to be retried.`
+            );
+          }
 
-		return NextResponse.json({ res: varResponse });
-	} catch (error) {
-		console.log("errorki=====", error);
-	}
+          console.log("artifact.getBinary_asB64", response);
+          response.imageArtifacts.forEach((artifact: Generation.Artifact) => {
+            varResponse = `data:${artifact.getMime()};base64,${artifact.getBinary_asB64()}`;
+          });
+        })
+        .catch((error) => {
+          console.error("Failed to make image-to-image request:", error);
+        });
+      return NextResponse.json({ res: varResponse });
+    }
+
+    return NextResponse.json({ res: "All input is required !" });
+  } catch (error) {
+    console.log("errorki=====", error);
+  }
 }
