@@ -1,41 +1,25 @@
 "use client";
 
-import {
-  ChangeEvent,
-  FormEvent,
-  SyntheticEvent,
-  useRef,
-  useState,
-} from "react";
+import { ChangeEvent, FormEvent, useRef, useState } from "react";
 import Image from "next/image";
-import axios from "axios";
 import Webcam from "react-webcam";
 import Toggle from "@/components/buttons/toggle";
-// import FormData from 'form-data';
 
 export default function Input() {
   const [loading, setLoading] = useState(false);
+  const [toggle, setToggle] = useState(false);
   const [prompt, setPrompt] = useState("");
-  const [fileSelected, setFile] = useState<string>();
+  const [fileSelected, setFile] = useState<File | string | null>();
   const [image, setUrl] = useState<string | null>(null);
-  const [camera, setCamera] = useState<boolean>(false);
+  const [fileName, setFileName] = useState<string | null>(null);
   const webcamRef = useRef<Webcam>(null);
-  // const getRequest = async () => {
-  // 	const req = await fetch('/api/generate', {
-  // 		method: "GET", headers: {
-  // 			'Content-Type': 'application/json',
-  // 		}
-  // 	});
-  // 	const res = await req.json();
-  // 	console.log("response", res);
-  // 	setUrl(res.res)
-  // 	return ""
-  // }
+
   const postRequest = async (value: FormEvent<HTMLFormElement>) => {
     setLoading(true);
     setUrl(null);
     value.preventDefault();
     let formData = new FormData();
+    formData.append("prompt", prompt);
     formData.append("prompt", prompt);
     if (fileSelected) {
       formData.append("image", fileSelected);
@@ -49,20 +33,33 @@ export default function Input() {
       // }
     });
     const res = await req.json();
-    console.log("response", res);
     setUrl(res.res);
     setLoading(false);
   };
 
-  // const handleFile = (e: ChangeEvent<HTMLInputElement>) => {
-  // 	if (e && e.target && e.target.files) {
-  // 		setFile(e.target.files[0]);
-  // 	}
-  // };
+  const toBase64 = (file: File) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+    });
+
+  const handleFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    setFile(null);
+    setFileName(null);
+    if (e && e.target && e.target.files) {
+      const reader = await toBase64(e.target.files[0]);
+      setFile(reader as string);
+      setUrl(reader as string);
+      setFileName(e.target.files[0].name);
+    }
+  };
 
   const captureImage = async () => {
+    setFile(null);
+    setFileName(null);
     if (webcamRef && webcamRef.current) {
-      // const form = new FormData()
       const srcImg = webcamRef.current.getScreenshot();
       if (srcImg) {
         setFile(srcImg);
@@ -70,8 +67,6 @@ export default function Input() {
       }
     }
   };
-
-  const offCamera = () => {};
 
   return (
     <div className="flex-row gap-3 flex center">
@@ -82,9 +77,9 @@ export default function Input() {
               Stability AI Example
             </h2>
             <p className="mt-1 text-sm leading-6 text-gray-600">
-              Write a few sentence of prompt and upload your photo.
+              Write a few sentence of prompt and upload your photo or take a
+              picture from your webcam.
             </p>
-
             <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
               <div className="col-span-full">
                 <label
@@ -106,93 +101,89 @@ export default function Input() {
                 {/* <p className="mt-3 text-sm leading-6 text-gray-600">Write a few prompt.</p> */}
               </div>
 
-              {/* <div className="col-span-full">
-								<label
-									htmlFor="cover-photo"
-									className="flex flex-row gap-2 text-sm font-medium leading-6 text-gray-900"
-								>
-									Image
-									<Toggle />
-								</label>
-								<div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
-									<div className="text-center">
-										<svg
-											className="mx-auto h-12 w-12 text-gray-300"
-											viewBox="0 0 24 24"
-											fill="currentColor"
-											aria-hidden="true"
-										>
-											<path
-												fillRule="evenodd"
-												d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z"
-												clipRule="evenodd"
-											/>
-										</svg>
-										{fileSelected instanceof File ? (
-											<div className="mt-4 flex text-sm leading-6 text-gray-600">
-												<p className="pl-1">{fileSelected.name}</p>
-											</div>
-										) : (
-											<div className="mt-4 flex text-sm leading-6 text-gray-600">
-												<label
-													htmlFor="file-upload"
-													className="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500 px-2"
-												>
-													<span>Upload a file</span>
-													<input
-														onChange={handleFile}
-														id="file-upload"
-														name="image"
-														type="file"
-														className="sr-only"
-													/>
-												</label>
-												<p className="pl-1">or drag and drop</p>
-											</div>
-										)}
-										<p className="mt-1 text-xs leading-5 text-gray-600">
-											PNG, JPG, GIF up to 10MB
-										</p>
-									</div>
-								</div>
-							</div> */}
-
               <div className="col-span-full">
                 <label
                   htmlFor="cover-photo"
-                  className="block text-sm font-medium leading-6 text-gray-900"
+                  className="flex flex-row gap-3 text-sm font-medium leading-6 text-gray-900"
                 >
-                  Take Photo
+                  Take picture
+                  <Toggle
+                    value={toggle}
+                    onChange={() => {
+                      !loading && setToggle(!toggle);
+                    }}
+                  />
+                  upload image {`${toggle}`}
                 </label>
                 <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
                   <div className="text-center">
-                    <Webcam
-                      ref={webcamRef}
-                      width="512px"
-                      height="512px"
-                      screenshotFormat="image/png"
-                    />
-                    <button
-                      type="button"
-                      onClick={captureImage}
-                      className="mt-1 rounded-md bg-gray-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                    >
-                      Take Photo
-                    </button>
+                    {!toggle ? (
+                      <>
+                        <Webcam
+                          ref={webcamRef}
+                          width="512px"
+                          height="512px"
+                          screenshotQuality={1}
+                          screenshotFormat="image/png"
+                        />
+                        <button
+                          type="button"
+                          onClick={captureImage}
+                          disabled={loading}
+                          className="mt-1 rounded-md bg-gray-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                        >
+                          Take Picture
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="mx-auto h-12 w-12 text-gray-300"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          aria-hidden="true"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        {fileName ? (
+                          <div className="mt-4 flex text-sm leading-6 text-gray-600">
+                            <p className="pl-1">{fileName}</p>
+                          </div>
+                        ) : (
+                          <div className="mt-4 flex text-sm leading-6 text-gray-600">
+                            <label
+                              htmlFor="file-upload"
+                              className="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500 px-2"
+                            >
+                              <span>Upload a file</span>
+                              <input
+                                onChange={handleFile}
+                                disabled={loading}
+                                id="file-upload"
+                                name="image"
+                                type="file"
+                                className="sr-only"
+                              />
+                            </label>
+                            <p className="pl-1">PNG or JPG</p>
+                          </div>
+                        )}
+                        <p className="mt-1 text-xs leading-5 text-gray-600">
+                          Make sure your image dimentions are 512x512 pixel
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
         <div className="mt-6 flex items-center justify-end gap-x-6">
-          <button
-            type="reset"
-            className="text-sm font-semibold leading-6 text-gray-900"
-          >
-            Cancel
-          </button>
           <button
             type="submit"
             disabled={loading}
@@ -204,16 +195,10 @@ export default function Input() {
       </form>
       <div className="flex flex-col center w-1/2">
         <h2 className="text-base font-semibold leading-7 text-gray-900 ">
-          Results
+          Results / Preview
         </h2>
         {image ? (
           <div className="col-span-full">
-            {/* <label
-							htmlFor="cover-photo"
-							className="block text-sm font-medium leading-6 text-gray-900"
-						>
-							Image
-						</label> */}
             <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
               <div className="text-center">
                 <Image
