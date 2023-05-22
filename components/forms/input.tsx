@@ -3,11 +3,11 @@
 import { ChangeEvent, FormEvent, useRef, useState } from "react";
 import Image from "next/image";
 import Webcam from "react-webcam";
-import Toggle from "@/components/buttons/toggle";
+// import Toggle from "@/components/buttons/toggle";
 
 export default function Input() {
 	const [loading, setLoading] = useState(false);
-	const [toggle, setToggle] = useState(false);
+	// const [toggle, setToggle] = useState(false);
 	const [prompt, setPrompt] = useState("");
 	const [fileSelected, setFile] = useState<File | string | null>();
 	const [image, setUrl] = useState<string | null>(null);
@@ -20,9 +20,11 @@ export default function Input() {
 		value.preventDefault();
 		let formData = new FormData();
 		formData.append("prompt", prompt);
-		formData.append("prompt", prompt);
+		if (image) {
+			formData.append("image", image);
+		}
 		if (fileSelected) {
-			formData.append("image", fileSelected);
+			formData.append("masking", fileSelected);
 		}
 		const req = await fetch("/api/generate", {
 			method: "POST",
@@ -51,7 +53,6 @@ export default function Input() {
 		if (e && e.target && e.target.files) {
 			const reader = await toBase64(e.target.files[0]);
 			setFile(reader as string);
-			setUrl(reader as string);
 			setFileName(e.target.files[0].name);
 		}
 	};
@@ -60,10 +61,10 @@ export default function Input() {
 		setFile(null);
 		setFileName(null);
 		if (webcamRef && webcamRef.current) {
-			const srcImg = webcamRef.current.getScreenshot();
+			const srcImg = webcamRef.current.getScreenshot({ width: 512, height: 512 });
 			if (srcImg) {
-				setFile(srcImg);
 				setUrl(srcImg);
+				console.log(srcImg);
 			}
 		}
 	};
@@ -107,76 +108,82 @@ export default function Input() {
 									className="flex flex-row gap-3 text-sm font-medium leading-6 text-gray-900"
 								>
 									Take picture
-									<Toggle
-										value={toggle}
-										onChange={() => {
-											!loading && setToggle(!toggle);
-										}}
-									/>
-									upload image {`${toggle}`}
 								</label>
 								<div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
 									<div className="text-center">
-										{!toggle ? (
-											<>
-												<Webcam
-													ref={webcamRef}
-													width="512px"
-													height="512px"
-													screenshotQuality={1}
-													screenshotFormat="image/png"
-												/>
-												<button
-													type="button"
-													onClick={captureImage}
-													disabled={loading}
-													className="mt-1 rounded-md bg-gray-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-												>
-													Take Picture
-												</button>
-											</>
+										<Webcam
+											ref={webcamRef}
+											width={500}
+											// height={512}
+											minScreenshotWidth={512}
+											minScreenshotHeight={512}
+											forceScreenshotSourceSize={true}
+											screenshotQuality={1}
+											screenshotFormat="image/png"
+										/>
+										<button
+											type="button"
+											onClick={captureImage}
+											disabled={loading}
+											className="mt-1 rounded-md bg-gray-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+										>
+											Take Picture
+										</button>
+										<p className="mt-1 text-xs leading-5 text-gray-600">
+											Make sure your image dimentions are 512x512 pixel
+										</p>
+									</div>
+								</div>
+							</div>
+
+							<div className="col-span-full">
+								<label
+									htmlFor="cover-photo"
+									className="flex flex-row gap-3 text-sm font-medium leading-6 text-gray-900"
+								>
+									Upload mask image
+								</label>
+								<div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
+									<div className="text-center">
+										<svg
+											className="mx-auto h-12 w-12 text-gray-300"
+											viewBox="0 0 24 24"
+											fill="currentColor"
+											aria-hidden="true"
+										>
+											<path
+												fillRule="evenodd"
+												d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z"
+												clipRule="evenodd"
+											/>
+										</svg>
+										{fileName ? (
+											<div className="mt-4 flex text-sm leading-6 text-gray-600">
+												<p className="pl-1">{fileName}</p>
+											</div>
 										) : (
-											<>
-												<svg
-													className="mx-auto h-12 w-12 text-gray-300"
-													viewBox="0 0 24 24"
-													fill="currentColor"
-													aria-hidden="true"
+											<div className="mt-4 flex text-sm leading-6 text-gray-600">
+												<label
+													htmlFor="file-upload"
+													className="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500 px-2"
 												>
-													<path
-														fillRule="evenodd"
-														d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z"
-														clipRule="evenodd"
+													<span>Upload a file</span>
+													<input
+														onChange={handleFile}
+														disabled={loading}
+														id="file-upload"
+														name="image"
+														type="file"
+														className="sr-only"
 													/>
-												</svg>
-												{fileName ? (
-													<div className="mt-4 flex text-sm leading-6 text-gray-600">
-														<p className="pl-1">{fileName}</p>
-													</div>
-												) : (
-													<div className="mt-4 flex text-sm leading-6 text-gray-600">
-														<label
-															htmlFor="file-upload"
-															className="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500 px-2"
-														>
-															<span>Upload a file</span>
-															<input
-																onChange={handleFile}
-																disabled={loading}
-																id="file-upload"
-																name="image"
-																type="file"
-																className="sr-only"
-															/>
-														</label>
-														<p className="pl-1">PNG or JPG</p>
-													</div>
-												)}
-												<p className="mt-1 text-xs leading-5 text-gray-600">
-													Make sure your image dimentions are 512x512 pixel
-												</p>
-											</>
+												</label>
+												<p className="pl-1">PNG or JPG</p>
+											</div>
 										)}
+										<p className="mt-1 text-xs leading-5 text-gray-600">
+											Make sure your image dimentions are 512x512 pixel
+										</p>
+
 									</div>
 								</div>
 							</div>
@@ -203,7 +210,8 @@ export default function Input() {
 							<div className="text-center">
 								<Image
 									width="0"
-									className="w-full h-auto"
+									style={{ width: "512px", height: "512px" }}
+									// className="w-full h-full"
 									height="0"
 									src={image}
 									alt="image preview"
