@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
       const reqMaskingImage = await fetch(masking);
       const result = await reqImage.blob();
       const resultMasking = await reqMaskingImage.blob();
+      console.log("----===", reqImage, reqMaskingImage);
       const stream: any = result.stream();
       const streamMasking: any = resultMasking.stream();
       const chunks = [];
@@ -64,15 +65,16 @@ export async function POST(request: NextRequest) {
           }
 
           console.log(
-            `${response.imageArtifacts.length} image${response.imageArtifacts.length > 1 ? "s" : ""
+            `${response.imageArtifacts.length} image${
+              response.imageArtifacts.length > 1 ? "s" : ""
             } were successfully generated.`
           );
 
           if (response.filteredArtifacts.length > 0) {
             console.log(
               `${response.filteredArtifacts.length} artifact` +
-              `${response.filteredArtifacts.length > 1 ? "s" : ""}` +
-              ` were filtered by the NSFW classifier and need to be retried.`
+                `${response.filteredArtifacts.length > 1 ? "s" : ""}` +
+                ` were filtered by the NSFW classifier and need to be retried.`
             );
           }
 
