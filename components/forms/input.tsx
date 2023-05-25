@@ -183,29 +183,29 @@ export default function Input() {
                             clipRule="evenodd"
                           />
                         </svg>
-                        {fileName ? (
-                          <div className="mt-4 flex text-sm leading-6 text-gray-600">
+
+                        <div className="mt-4 flex text-sm leading-6 text-gray-600">
+                          <label
+                            htmlFor="file-upload"
+                            className="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500 px-2"
+                          >
+                            <span>Upload a file</span>
+                            <input
+                              onChange={handleFile}
+                              disabled={loading}
+                              id="file-upload"
+                              name="image"
+                              type="file"
+                              className="sr-only"
+                            />
+                          </label>
+                          {fileName ?
                             <p className="pl-1">{fileName}</p>
-                          </div>
-                        ) : (
-                          <div className="mt-4 flex text-sm leading-6 text-gray-600">
-                            <label
-                              htmlFor="file-upload"
-                              className="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500 px-2"
-                            >
-                              <span>Upload a file</span>
-                              <input
-                                onChange={handleFile}
-                                disabled={loading}
-                                id="file-upload"
-                                name="image"
-                                type="file"
-                                className="sr-only"
-                              />
-                            </label>
+                            :
+
                             <p className="pl-1">PNG or JPG</p>
-                          </div>
-                        )}
+                          }
+                        </div>
                         <p className="mt-1 text-xs leading-5 text-gray-600">
                           Make sure your image dimentions are 512x512 pixel
                         </p>
@@ -236,29 +236,30 @@ export default function Input() {
                         clipRule="evenodd"
                       />
                     </svg>
-                    {fileMaskName ? (
-                      <div className="mt-4 flex text-sm leading-6 text-gray-600">
+
+                    <div className="mt-4 flex text-sm leading-6 text-gray-600">
+                      <label
+                        htmlFor="file-mask-upload"
+                        className="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500 px-2"
+                      >
+                        <span>Upload a file</span>
+                        <input
+                          onChange={handleMaskFile}
+                          disabled={loading}
+                          id="file-mask-upload"
+                          name="image"
+                          type="file"
+                          className="sr-only"
+                        />
+                      </label>
+
+                      {fileMaskName ?
                         <p className="pl-1">{fileMaskName}</p>
-                      </div>
-                    ) : (
-                      <div className="mt-4 flex text-sm leading-6 text-gray-600">
-                        <label
-                          htmlFor="file-upload"
-                          className="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500 px-2"
-                        >
-                          <span>Upload a file</span>
-                          <input
-                            onChange={handleMaskFile}
-                            disabled={loading}
-                            id="file-upload"
-                            name="image"
-                            type="file"
-                            className="sr-only"
-                          />
-                        </label>
+                        :
+
                         <p className="pl-1">PNG or JPG</p>
-                      </div>
-                    )}
+                      }
+                    </div>
                     <p className="mt-1 text-xs leading-5 text-gray-600">
                       Make sure your image dimentions are 512x512 pixel
                     </p>
@@ -301,7 +302,7 @@ export default function Input() {
                     style={
                       isCaptureImg
                         ? { width: "612px", height: "460px" }
-                        : { width: "512px", height: "512px" }
+                        : { width: "512px", height: "auto" }
                     }
                     // className="w-full h-full"
                     height="0"
